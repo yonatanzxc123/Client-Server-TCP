@@ -1,0 +1,20 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+*.ipch/
+*.vscode/
+
+# Other
+*.log
+*.tlog
+*.cache
+*.db
+*.idx
+
