@@ -27,11 +27,11 @@ const int SEND = 4;
 const int SEND_TIME = 1;
 const int SEND_SECONDS = 2;
 
-bool addSocket(SOCKET id, int what, SocketState sockets[], int socketsCount);
-void removeSocket(int index, SocketState sockets[], int socketsCount);
-void acceptConnection(int index, SocketState sockets[], int socketsCount);
-void receiveMessage(int index, SocketState sockets[], int socketsCount);
-void sendMessage(int index, SocketState sockets[], int socketsCount);
+bool addSocket(SOCKET id, int what, SocketState sockets[], int& socketsCount);
+void removeSocket(int index, SocketState sockets[], int& socketsCount);
+void acceptConnection(int index, SocketState sockets[], int& socketsCount);
+void receiveMessage(int index, SocketState sockets[], int& socketsCount);
+void sendMessage(int index, SocketState sockets[], int& socketsCount);
 
 
 
@@ -204,13 +204,19 @@ void main()
 	WSACleanup();
 }
 
-bool addSocket(SOCKET id, int what ,SocketState sockets[], int socketsCount)
+bool addSocket(SOCKET id, int what ,SocketState sockets[], int& socketsCount)
 {
 	for (int i = 0; i < MAX_SOCKETS; i++)
 	{
 		if (sockets[i].recv == EMPTY)
 		{
+			
 			sockets[i].id = id;
+			unsigned long flag = 1;
+			if (ioctlsocket(sockets[i].id, FIONBIO, &flag) != 0)
+			{
+				cout << "Time Server: Error at ioctlsocket(): " << WSAGetLastError() << endl;
+			}
 			sockets[i].recv = what;
 			sockets[i].send = IDLE;
 			sockets[i].len = 0;
@@ -221,14 +227,14 @@ bool addSocket(SOCKET id, int what ,SocketState sockets[], int socketsCount)
 	return (false);
 }
 
-void removeSocket(int index, SocketState sockets[], int socketsCount)
+void removeSocket(int index, SocketState sockets[], int& socketsCount)
 {
 	sockets[index].recv = EMPTY;
 	sockets[index].send = EMPTY;
 	socketsCount--;
 }
 
-void acceptConnection(int index, SocketState sockets[], int socketsCount)
+void acceptConnection(int index, SocketState sockets[], int& socketsCount)
 {
 	SOCKET id = sockets[index].id;
 	struct sockaddr_in from;		// Address of sending partner
@@ -241,16 +247,7 @@ void acceptConnection(int index, SocketState sockets[], int socketsCount)
 		return;
 	}
 	cout << "Time Server: Client " << inet_ntoa(from.sin_addr) << ":" << ntohs(from.sin_port) << " is connected." << endl;
-
-	//
-	// Set the socket to be in non-blocking mode.
-	//
-	unsigned long flag = 1;
-	if (ioctlsocket(msgSocket, FIONBIO, &flag) != 0)
-	{
-		cout << "Time Server: Error at ioctlsocket(): " << WSAGetLastError() << endl;
-	}
-
+	
 	if (addSocket(msgSocket, RECEIVE, sockets, socketsCount) == false)
 	{
 		cout << "\t\tToo many connections, dropped!\n";
@@ -259,7 +256,7 @@ void acceptConnection(int index, SocketState sockets[], int socketsCount)
 	return;
 }
 
-void receiveMessage(int index, SocketState sockets[], int socketsCount)
+void receiveMessage(int index, SocketState sockets[], int& socketsCount)
 {
 	SOCKET msgSocket = sockets[index].id;
 
@@ -315,7 +312,7 @@ void receiveMessage(int index, SocketState sockets[], int socketsCount)
 
 }
 
-void sendMessage(int index, SocketState sockets[], int socketsCount)
+void sendMessage(int index, SocketState sockets[], int& socketsCount)
 {
 	int bytesSent = 0;
 	char sendBuff[255];
