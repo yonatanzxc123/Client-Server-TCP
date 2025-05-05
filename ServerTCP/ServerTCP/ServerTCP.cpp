@@ -352,5 +352,5 @@ void sendMessage(int index, SocketState sockets[], int socketsCount)
 
 	cout << "Time Server: Sent: " << bytesSent << "\\" << strlen(sendBuff) << " bytes of \"" << sendBuff << "\" message.\n";
 
-	sockets[index].send = IDLE;
+	sockets[index].send = IDLE; 
 }
