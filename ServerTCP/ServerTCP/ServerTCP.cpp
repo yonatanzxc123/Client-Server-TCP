@@ -191,12 +191,9 @@ void main()
 			if (FD_ISSET(sockets[i].id, &waitSend))
 			{
 				nfd--;
-				switch (sockets[i].send)
-				{
-				case SEND:
-					sendMessage(i, sockets, socketsCount);
-					break;
-				}
+			    sendMessage(i, sockets, socketsCount);
+			    break;
+				
 			}
 		}
 	}
