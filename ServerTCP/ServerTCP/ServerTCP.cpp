@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <iostream>
 using namespace std;
 #pragma comment(lib, "Ws2_32.lib")
@@ -26,18 +27,19 @@ const int SEND = 4;
 const int SEND_TIME = 1;
 const int SEND_SECONDS = 2;
 
-bool addSocket(SOCKET id, int what);
-void removeSocket(int index);
-void acceptConnection(int index);
-void receiveMessage(int index);
-void sendMessage(int index);
+bool addSocket(SOCKET id, int what, SocketState sockets[], int socketsCount);
+void removeSocket(int index, SocketState sockets[], int socketsCount);
+void acceptConnection(int index, SocketState sockets[], int socketsCount);
+void receiveMessage(int index, SocketState sockets[], int socketsCount);
+void sendMessage(int index, SocketState sockets[], int socketsCount);
 
-struct SocketState sockets[MAX_SOCKETS] = { 0 };
-int socketsCount = 0;
+
 
 
 void main()
 {
+	struct SocketState sockets[MAX_SOCKETS] = { 0 };
+	int socketsCount = 0;
 	// Initialize Winsock (Windows Sockets).
 
 	// Create a WSADATA object called wsaData.
@@ -124,7 +126,8 @@ void main()
 		WSACleanup();
 		return;
 	}
-	addSocket(listenSocket, LISTEN);
+	
+	addSocket(listenSocket, LISTEN, sockets, socketsCount);
 
 	// Accept connections and handles them one by one.
 	while (true)
@@ -173,11 +176,11 @@ void main()
 				switch (sockets[i].recv)
 				{
 				case LISTEN:
-					acceptConnection(i);
+					acceptConnection(i, sockets, socketsCount);
 					break;
 
 				case RECEIVE:
-					receiveMessage(i);
+					receiveMessage(i, sockets, socketsCount);
 					break;
 				}
 			}
@@ -191,7 +194,7 @@ void main()
 				switch (sockets[i].send)
 				{
 				case SEND:
-					sendMessage(i);
+					sendMessage(i, sockets, socketsCount);
 					break;
 				}
 			}
@@ -204,7 +207,7 @@ void main()
 	WSACleanup();
 }
 
-bool addSocket(SOCKET id, int what)
+bool addSocket(SOCKET id, int what ,SocketState sockets[], int socketsCount)
 {
 	for (int i = 0; i < MAX_SOCKETS; i++)
 	{
@@ -221,14 +224,14 @@ bool addSocket(SOCKET id, int what)
 	return (false);
 }
 
-void removeSocket(int index)
+void removeSocket(int index, SocketState sockets[], int socketsCount)
 {
 	sockets[index].recv = EMPTY;
 	sockets[index].send = EMPTY;
 	socketsCount--;
 }
 
-void acceptConnection(int index)
+void acceptConnection(int index, SocketState sockets[], int socketsCount)
 {
 	SOCKET id = sockets[index].id;
 	struct sockaddr_in from;		// Address of sending partner
@@ -251,7 +254,7 @@ void acceptConnection(int index)
 		cout << "Time Server: Error at ioctlsocket(): " << WSAGetLastError() << endl;
 	}
 
-	if (addSocket(msgSocket, RECEIVE) == false)
+	if (addSocket(msgSocket, RECEIVE, sockets, socketsCount) == false)
 	{
 		cout << "\t\tToo many connections, dropped!\n";
 		closesocket(id);
@@ -259,7 +262,7 @@ void acceptConnection(int index)
 	return;
 }
 
-void receiveMessage(int index)
+void receiveMessage(int index, SocketState sockets[], int socketsCount)
 {
 	SOCKET msgSocket = sockets[index].id;
 
@@ -270,13 +273,13 @@ void receiveMessage(int index)
 	{
 		cout << "Time Server: Error at recv(): " << WSAGetLastError() << endl;
 		closesocket(msgSocket);
-		removeSocket(index);
+		removeSocket(index, sockets, socketsCount);
 		return;
 	}
 	if (bytesRecv == 0)
 	{
 		closesocket(msgSocket);
-		removeSocket(index);
+		removeSocket(index, sockets, socketsCount);
 		return;
 	}
 	else
@@ -307,7 +310,7 @@ void receiveMessage(int index)
 			else if (strncmp(sockets[index].buffer, "Exit", 4) == 0)
 			{
 				closesocket(msgSocket);
-				removeSocket(index);
+				removeSocket(index, sockets, socketsCount);
 				return;
 			}
 		}
@@ -315,7 +318,7 @@ void receiveMessage(int index)
 
 }
 
-void sendMessage(int index)
+void sendMessage(int index, SocketState sockets[], int socketsCount)
 {
 	int bytesSent = 0;
 	char sendBuff[255];
@@ -340,7 +343,7 @@ void sendMessage(int index)
 		time_t timer;
 		time(&timer);
 		// Convert the number to string.
-		itoa((int)timer, sendBuff, 10);
+		_itoa((int)timer, sendBuff, 10);
 	}
 
 	bytesSent = send(msgSocket, sendBuff, (int)strlen(sendBuff), 0);
