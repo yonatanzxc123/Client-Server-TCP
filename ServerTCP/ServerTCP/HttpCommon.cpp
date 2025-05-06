@@ -12,8 +12,6 @@ using namespace std;
 namespace common
 {
 
-
-
     std::string httpDate()
     {	// RFC 1123 date format
         char buf[128]; time_t t = time(nullptr); struct tm tm;
@@ -21,7 +19,6 @@ namespace common
         strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", &tm);
         return buf;
     }
-
 
     HttpMethod toMethod(const string& t)
     {
@@ -34,8 +31,6 @@ namespace common
         if (t == "TRACE") return HttpMethod::TRACE;
         return HttpMethod::NONE;
     }
-
-
 
     bool requestComplete(const string& buf)
     {

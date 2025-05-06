@@ -10,19 +10,6 @@
 namespace common
 {
 
-    // Determine Content-Type based on file extension
-    static std::string getContentType(const std::string& path) {
-        auto ext = std::filesystem::path(path).extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if (ext == ".html")  return "text/html";
-        if (ext == ".css")   return "text/css";
-        if (ext == ".js")    return "application/javascript";
-        if (ext == ".png")   return "image/png";
-        if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
-        if (ext == ".gif")   return "image/gif";
-        return "application/octet-stream";
-    }
-
     Connection::Connection(SOCKET s)
         : sock(s), lastActivity(time(nullptr))
     {
@@ -64,7 +51,7 @@ namespace common
         method = toMethod(methodTok);
         switch (method)
         {
-        case HttpMethod::OPTIONS: handleOptions();      break;
+        case HttpMethod::OPTIONS: handleOptions();       break;
         case HttpMethod::GET:     handleGetHead(true);   break;
         case HttpMethod::HEAD:    handleGetHead(false);  break;
         case HttpMethod::POST:    handlePost();          break;
@@ -146,7 +133,6 @@ namespace common
 
         std::ostringstream o;
         o << "HTTP/1.1 200 OK\r\n"
-            << "Content-Type: " << getContentType(file) << "\r\n"
             << "Content-Length: " << (sendBody ? body.size() : 0) << "\r\n"
             << "\r\n";
         respBuf = sendBody ? o.str() + body : o.str();
