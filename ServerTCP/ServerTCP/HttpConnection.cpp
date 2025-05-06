@@ -133,8 +133,7 @@ namespace common
 
         std::ostringstream o;
         o << "HTTP/1.1 200 OK\r\n"
-            << "Content-Length: " << (sendBody ? body.size() : 0) << "\r\n"
-            << "\r\n";
+            << "Content-Length: " << (sendBody ? body.size() : 0) << "\r\n" << "\r\n";
         respBuf = sendBody ? o.str() + body : o.str();
     }
 
@@ -150,34 +149,53 @@ namespace common
     }
 
     void Connection::handlePut() {
+        // Parse request‐line
         std::istringstream iss(reqBuf);
-        std::string m, uri;
-        iss >> m >> uri;
+        std::string method, uri;
+        iss >> method >> uri;
 
-        // Map root to index.html
+        // Simple origin‐server: reject any “..” in path
+        if (uri.find("..") != std::string::npos)
+        {
+            handleNotImpl(400, "Bad Request");
+            return;
+        }
+
+        // Map / to your default resource if you like
         std::string path = (uri == "/" ? "/index.html" : uri);
         std::string file = WEBROOT + path;
 
-        auto pos = reqBuf.find("\r\n\r\n");
-        std::string body = (pos == std::string::npos ? "" : reqBuf.substr(pos + 4));
+        // Extract body
+        auto hdrEnd = reqBuf.find("\r\n\r\n");
+        std::string body = hdrEnd == std::string::npos ? "" : reqBuf.substr(hdrEnd + 4);
 
-        // Load or create HTML
-        std::string page;
-        if (!loadFile(file, page))
-        {
-            page = "<!DOCTYPE html><html><body></body></html>";
-        }
-        std::string para = "<p>" + body + "</p>\n";
-        auto insertPos = page.rfind("</body>");
-        if (insertPos != std::string::npos) page.insert(insertPos, para);
-        else page += para;
+        // Check if resource already exists
+        bool existed = std::filesystem::exists(file);
 
+        // Try to open
         std::ofstream ofs(file, std::ios::binary | std::ios::trunc);
-        if (!ofs) { handleNotImpl(500, "Internal Server Error"); return; }
-        ofs << page;
+        if (!ofs)
+        {
+            handleNotImpl(500, "Internal Server Error");
+            return;
+        }
+        ofs << body;
 
+        // Build response
         std::ostringstream o;
-        o << "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+        if (!existed)
+        {
+            // 201 Created for new resources
+            o << "HTTP/1.1 201 Created\r\n"
+                << "Location: " << path << "\r\n";
+        }
+        else
+        {
+            // 200 OK for updates
+            o << "HTTP/1.1 200 OK\r\n";
+        }
+        o << "Content-Length: 0\r\n" << "\r\n";
+
         respBuf = o.str();
     }
 
@@ -221,4 +239,4 @@ namespace common
         return now - lastActivity > IDLE_TIMEOUT;
     }
 
-} // namespace common
+}
