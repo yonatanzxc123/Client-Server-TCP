@@ -28,6 +28,8 @@ namespace common
         void handlePost();
         void handleOptions();
         void handleTrace();
+        void handlePut();
+        void handleDelete();
         void handleNotImpl(int code = 501, const std::string& msg = "Not Implemented");
 
 

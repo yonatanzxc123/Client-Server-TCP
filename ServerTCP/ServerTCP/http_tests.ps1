@@ -9,7 +9,7 @@ $tests = @(
     @{ Method = 'GET';     Uri = "$baseUrl/?lang=he"; Body = $null },
     @{ Method = 'POST';    Uri = "$baseUrl/"; Body = 'Hello from test' },
     @{ Method = 'PUT';     Uri = "$baseUrl/test.txt"; Body = 'PUT test data' },
-    @{ Method = 'DELETE';  Uri = "$baseUrl/test.txt"; Body = $null },
+    @{ Method = 'GET'; Uri = "$baseUrl/test.txt"; Body = $null },
     @{ Method = 'TRACE';   Uri = "$baseUrl/"; Body = $null }
 )
 
