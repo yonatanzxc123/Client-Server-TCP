@@ -112,7 +112,8 @@ namespace common {
             auto qs = uri.substr(q + 1);
             if (qs.rfind("lang=", 0) == 0) lang = qs.substr(5);
         }
-        if (path == "/") path = "/index.html";
+        if (path == "/" && lang != "") path = "/index." + lang + ".html";
+		else if (path == "/") path = "/index.html";
 
         std::string file = common::WEBROOT + path;
         if (!lang.empty())
