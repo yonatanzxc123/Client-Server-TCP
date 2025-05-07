@@ -200,30 +200,46 @@ namespace common
     }
 
     void Connection::handleDelete() {
+        // Parse the request‐line
         std::istringstream iss(reqBuf);
-        std::string m, uri;
-        iss >> m >> uri;
+        std::string method, uri;
+        iss >> method >> uri;
 
-        // Map root to index.html
+        // Reject any “..”
+        if (uri.find("..") != std::string::npos)
+        {
+            handleNotImpl(400, "Bad Request");
+            return;
+        }
+
         std::string path = (uri == "/" ? "/index.html" : uri);
         std::string file = WEBROOT + path;
 
-        std::string page;
-        if (!loadFile(file, page)) { handleNotImpl(404, "Not Found"); return; }
-        auto endP = page.rfind("</p>");
-        if (endP != std::string::npos)
+        // Try to delete the file
+        if (std::filesystem::exists(file))
         {
-            auto startP = page.rfind("<p>", endP);
-            if (startP != std::string::npos) page.erase(startP, endP + 4 - startP);
+            std::error_code ec;
+            std::filesystem::remove(file, ec);
+            if (ec)
+            {
+                // Couldn’t delete
+                handleNotImpl(500, "Internal Server Error");
+            }
+            else
+            {
+                // Deletion succeeded, 204 No Content (no body)
+                std::ostringstream o;
+                o << "HTTP/1.1 204 No Content\r\n"
+                    << "Content-Length: 0\r\n"
+                    << "\r\n";
+                respBuf = o.str();
+            }
         }
-
-        std::ofstream ofs(file, std::ios::binary | std::ios::trunc);
-        if (!ofs) { handleNotImpl(500, "Internal Server Error"); return; }
-        ofs << page;
-
-        std::ostringstream o;
-        o << "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-        respBuf = o.str();
+        else
+        {
+            // Resource didn’t exist, 404 Not Found
+            handleNotImpl(404, "Not Found");
+        }
     }
 
     void Connection::handleTrace() {
