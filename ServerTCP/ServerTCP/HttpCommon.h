@@ -30,6 +30,6 @@ namespace common
 	bool requestComplete(const std::string& buf);
 	bool loadFile(const std::string& path, std::string& out);   
 
-	inline const std::string WEBROOT = "./wwwroot";            
+	inline const std::string WEBROOT = "C:\\temp";
 
 } 
